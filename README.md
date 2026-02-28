@@ -6,12 +6,12 @@ A full-stack pet store application built with **Spring Boot 3** and **React + SA
 
 ## Tech Stack
 
-| Layer     | Technology                                      |
-|-----------|-------------------------------------------------|
-| Backend   | Spring Boot 3.4.3 · Java 17 · Spring Data JPA  |
-| Database  | H2 (in-memory, dev) — swap to MySQL/Postgres easily |
-| Frontend  | React 18 · Vite · SASS (CSS Modules via partials) |
-| Build     | Maven · frontend-maven-plugin                   |
+| Layer    | Technology                                                  |
+|----------|-------------------------------------------------------------|
+| Backend  | Spring Boot 3.4.3 · Java 17 · Spring Data JPA · Spring Security 6 |
+| Database | H2 (in-memory, dev) — swap to MySQL/Postgres easily         |
+| Frontend | React 18 · Vite · SASS                                      |
+| Build    | Maven · frontend-maven-plugin                               |
 
 ---
 
@@ -19,33 +19,49 @@ A full-stack pet store application built with **Spring Boot 3** and **React + SA
 
 ```
 sbr/
-├── pom.xml                          # Maven build (includes frontend plugin)
-├── frontend/                        # React + Vite app
+├── pom.xml                              # Maven build (includes frontend plugin)
+├── frontend/                            # React + Vite app
 │   ├── src/
-│   │   ├── components/              # Navbar, Footer, PetCard, Pagination
-│   │   ├── pages/                   # Home, Pets, PetDetail, Admin
-│   │   ├── services/api.js          # Axios API client
-│   │   └── styles/                  # SASS partials + main.scss
-│   └── vite.config.js               # Proxies /api → :8080 in dev
+│   │   ├── context/AuthContext.jsx      # Session auth state + hooks
+│   │   ├── components/                  # Navbar, Footer, PetCard, Pagination, ProtectedRoute
+│   │   ├── pages/                       # Home, Pets, PetDetail, Admin, Login, Register, Users
+│   │   ├── services/api.js              # Axios client (withCredentials, 401 interceptor)
+│   │   └── styles/                      # SASS partials + main.scss
+│   └── vite.config.js                   # Proxies /api → :8080 in dev
 └── src/main/java/com/petstore/
-    ├── config/CorsConfig.java
-    ├── controller/                  # PetController, CategoryController, SpaController
-    ├── dto/PetRequest.java
-    ├── model/                       # Pet, Category, PetStatus
-    ├── repository/                  # Spring Data JPA repositories
-    └── service/                     # PetService, CategoryService
+    ├── config/                          # SecurityConfig, AppConfig (PasswordEncoder)
+    ├── controller/                      # PetController, CategoryController,
+    │                                    # AuthController, UserController, SpaController
+    ├── dto/                             # PetRequest, RegisterRequest, LoginRequest, UserResponse
+    ├── model/                           # Pet, Category, PetStatus, User, Role
+    ├── repository/                      # Spring Data JPA repositories
+    └── service/                         # PetService, CategoryService, UserService
 ```
 
 ---
 
 ## Features
 
-- **Browse pets** — grid view with category icons and status badges
-- **Filter & search** — by status, category, name (server-side)
-- **Pagination** — server-driven with page size picker and sort options (price, name, age)
-- **Pet detail** — full info, adopt button, edit/delete actions
-- **Admin form** — add or edit pets with validation
-- **SPA routing** — React Router with Spring Boot forwarding non-API routes to `index.html`
+### Pet Store
+- **Browse pets** — responsive grid with category icons and status badges
+- **Filter & search** — by status, category, or name (all server-side)
+- **Pagination** — server-driven with page size picker and sort options (newest, price, name, age)
+- **Pet detail** — full info page; write actions visible to admins only
+
+### Auth & Users
+- **Register / Login** — session-based auth via `JSESSIONID` cookie; BCrypt passwords
+- **Role-gated UI** — navbar, buttons, and routes adapt to role automatically
+- **Admin panel** — add / edit pets, manage all users
+- **User management** — admin table with promote/demote toggle and delete
+
+---
+
+## Demo Accounts
+
+| Username   | Password      | Role     |
+|------------|---------------|----------|
+| `admin`    | `admin123`    | ADMIN    |
+| `customer` | `customer123` | CUSTOMER |
 
 ---
 
@@ -54,7 +70,7 @@ sbr/
 ### Prerequisites
 
 - Java 17+
-- Maven 3.6+ (or use the SDKMAN-managed Maven)
+- Maven 3.6+
 - Node 18+ / npm 9+
 
 ### Development (two terminals)
@@ -92,50 +108,80 @@ Open **http://localhost:8080**
 
 Base path: `/api`
 
+### Auth
+
+| Method | Endpoint              | Access | Description                        |
+|--------|-----------------------|--------|------------------------------------|
+| POST   | `/api/auth/register`  | Public | Create account (returns UserResponse) |
+| POST   | `/api/auth/login`     | Public | Start session (returns UserResponse)  |
+| POST   | `/api/auth/logout`    | Auth   | Invalidate session                 |
+| GET    | `/api/auth/me`        | Auth   | Current user info                  |
+
+### Users
+
+| Method | Endpoint                  | Access | Description           |
+|--------|---------------------------|--------|-----------------------|
+| GET    | `/api/users`              | ADMIN  | List all users        |
+| GET    | `/api/users/:id`          | ADMIN  | Get single user       |
+| PATCH  | `/api/users/:id/role`     | ADMIN  | Change role           |
+| DELETE | `/api/users/:id`          | ADMIN  | Delete user           |
+
+`PATCH /api/users/:id/role` body: `{ "role": "ADMIN" }` or `{ "role": "CUSTOMER" }`
+
 ### Pets
 
-| Method | Endpoint            | Description                              |
-|--------|---------------------|------------------------------------------|
-| GET    | `/api/pets`         | List pets (paginated, filterable, sorted)|
-| GET    | `/api/pets/:id`     | Get single pet                           |
-| GET    | `/api/pets/search`  | Search pets by name (paginated)          |
-| POST   | `/api/pets`         | Create pet                               |
-| PUT    | `/api/pets/:id`     | Update pet                               |
-| DELETE | `/api/pets/:id`     | Delete pet                               |
+| Method | Endpoint            | Access | Description                               |
+|--------|---------------------|--------|-------------------------------------------|
+| GET    | `/api/pets`         | Public | List pets (paginated, filterable, sorted) |
+| GET    | `/api/pets/:id`     | Public | Get single pet                            |
+| GET    | `/api/pets/search`  | Public | Search by name (paginated)                |
+| POST   | `/api/pets`         | ADMIN  | Create pet                                |
+| PUT    | `/api/pets/:id`     | ADMIN  | Update pet                                |
+| DELETE | `/api/pets/:id`     | ADMIN  | Delete pet                                |
 
-**Pagination / sort query params for `GET /api/pets`:**
+**Query params for `GET /api/pets`:**
 
-| Param      | Default | Description                              |
-|------------|---------|------------------------------------------|
-| `page`     | `0`     | 0-based page index                       |
-| `size`     | `8`     | Page size (max 50)                       |
-| `sort`     | `id`    | Field: `id`, `name`, `price`, `age`      |
-| `dir`      | `asc`   | Direction: `asc` or `desc`              |
-| `status`   | —       | Filter: `AVAILABLE`, `PENDING`, `ADOPTED`|
-| `categoryId` | —     | Filter by category ID                    |
+| Param        | Default | Description                               |
+|--------------|---------|-------------------------------------------|
+| `page`       | `0`     | 0-based page index                        |
+| `size`       | `8`     | Page size (max 50)                        |
+| `sort`       | `id`    | Field: `id`, `name`, `price`, `age`       |
+| `dir`        | `asc`   | Direction: `asc` or `desc`               |
+| `status`     | —       | Filter: `AVAILABLE`, `PENDING`, `ADOPTED` |
+| `categoryId` | —       | Filter by category ID                     |
 
 ### Categories
 
-| Method | Endpoint               | Description       |
-|--------|------------------------|-------------------|
-| GET    | `/api/categories`      | List all          |
-| GET    | `/api/categories/:id`  | Get single        |
-| POST   | `/api/categories`      | Create            |
-| PUT    | `/api/categories/:id`  | Update            |
-| DELETE | `/api/categories/:id`  | Delete            |
+| Method | Endpoint               | Access | Description  |
+|--------|------------------------|--------|--------------|
+| GET    | `/api/categories`      | Public | List all     |
+| GET    | `/api/categories/:id`  | Public | Get single   |
+| POST   | `/api/categories`      | ADMIN  | Create       |
+| PUT    | `/api/categories/:id`  | ADMIN  | Update       |
+| DELETE | `/api/categories/:id`  | ADMIN  | Delete       |
+
+---
+
+## Security
+
+- **Mechanism**: HTTP session (`JSESSIONID` cookie, 24-hour TTL)
+- **Passwords**: BCrypt via Spring Security
+- **CSRF**: disabled — protected by strict CORS (`allowCredentials + specific origin`)
+- **Unauthenticated write attempts**: `403 Forbidden`
 
 ---
 
 ## Database
 
-H2 in-memory database is seeded on startup with **6 categories** and **12 pets**.
+H2 in-memory database seeded on startup with **6 categories**, **12 pets**, and **2 users**.
 
-H2 console available at **http://localhost:8080/h2-console**
+H2 console: **http://localhost:8080/h2-console**
 - JDBC URL: `jdbc:h2:mem:petstore`
 - User: `sa` · Password: *(empty)*
 
-To switch to PostgreSQL, update `application.properties`:
+### Switch to PostgreSQL
 
+`application.properties`:
 ```properties
 spring.datasource.url=jdbc:postgresql://localhost:5432/petstore
 spring.datasource.username=your_user
@@ -144,8 +190,7 @@ spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
 spring.jpa.hibernate.ddl-auto=update
 ```
 
-And add the driver to `pom.xml`:
-
+`pom.xml`:
 ```xml
 <dependency>
     <groupId>org.postgresql</groupId>
