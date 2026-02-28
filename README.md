@@ -23,6 +23,7 @@ A full-stack pet-store application built with **Spring Boot 3** on the backend a
 10. [Demo Accounts](#demo-accounts)
 11. [Database](#database)
 12. [Switching Databases](#switching-databases)
+13. [Monitoring](#monitoring)
 
 ---
 
@@ -604,3 +605,65 @@ environment:
 ```bash
 mvn spring-boot:run -Dspring.profiles.active=h2
 ```
+
+---
+
+## Monitoring
+
+The Docker Compose stack includes **Prometheus** and **Grafana** for out-of-the-box
+observability.
+
+| Service    | URL                      | Credentials   |
+|------------|--------------------------|---------------|
+| Grafana    | http://localhost:3000    | admin / admin |
+| Prometheus | http://localhost:9090    | —             |
+
+### Stack overview
+
+```
+Spring Boot Actuator  →  /actuator/prometheus
+        ↑ scraped every 15 s
+Prometheus            →  stores time-series metrics
+        ↑ queried on dashboard load
+Grafana               →  renders charts
+```
+
+### Exposed Actuator endpoints
+
+| Endpoint                    | Access  | Description                        |
+|-----------------------------|---------|------------------------------------|
+| `/actuator/health`          | Public  | App and DB liveness                |
+| `/actuator/info`            | Public  | Build info                         |
+| `/actuator/prometheus`      | Public  | All metrics in Prometheus format   |
+
+### Pre-built dashboard
+
+`docker/grafana/dashboards/pawstore.json` is provisioned automatically and covers:
+
+| Panel | Metric |
+|-------|--------|
+| HTTP Request Rate | `rate(http_server_requests_seconds_count[1m])` |
+| HTTP Error Rate (5xx) | filtered by `status=~"5.."` |
+| HTTP Response Time P95 | `histogram_quantile(0.95, ...)` |
+| CPU Usage | `process_cpu_usage` |
+| JVM Heap Memory | `jvm_memory_used_bytes{area="heap"}` |
+| Database Connections | `hikaricp_connections_active/idle/pending` |
+| JVM Threads | `jvm_threads_live_threads` |
+| GC Pause Duration P99 | `histogram_quantile(0.99, jvm_gc_pause_seconds_bucket)` |
+
+### Configuration files
+
+```
+docker/
+├── prometheus/
+│   └── prometheus.yml                        # Scrape config (target: app:8080)
+└── grafana/
+    ├── provisioning/
+    │   ├── datasources/prometheus.yml        # Auto-connects Grafana → Prometheus
+    │   └── dashboards/dashboards.yml         # Tells Grafana where dashboard JSON lives
+    └── dashboards/
+        └── pawstore.json                     # Pre-built JVM + HTTP dashboard
+```
+
+> For a detailed explanation of how each component works, see the
+> [Junior Developer Tutorial — Section 10](TUTORIAL.md#10-monitoring-actuator-prometheus-and-grafana).
