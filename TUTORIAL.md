@@ -39,7 +39,14 @@ but *why* it is written that way. Every section builds on the one before it.
 7. [Configuration Files Explained](#7-configuration-files-explained)
 8. [Build and Docker](#8-build-and-docker)
 9. [Running the Project](#9-running-the-project)
-10. [Quick Reference](#10-quick-reference)
+10. [Monitoring: Actuator, Prometheus, and Grafana](#10-monitoring-actuator-prometheus-and-grafana)
+    - 10.1 [What is Monitoring and Why Does It Matter?](#101-what-is-monitoring-and-why-does-it-matter)
+    - 10.2 [Spring Boot Actuator — Built-in Health and Metrics](#102-spring-boot-actuator--built-in-health-and-metrics)
+    - 10.3 [Prometheus — Collecting the Metrics](#103-prometheus--collecting-the-metrics)
+    - 10.4 [Grafana — Visualising the Metrics](#104-grafana--visualising-the-metrics)
+    - 10.5 [The Pre-built PawStore Dashboard](#105-the-pre-built-pawstore-dashboard)
+    - 10.6 [How the Pieces Wire Together](#106-how-the-pieces-wire-together)
+11. [Quick Reference](#11-quick-reference)
 
 ---
 
@@ -1632,7 +1639,7 @@ curl http://localhost:8080/api/users \
 
 ---
 
-## 10. Quick Reference
+## 11. Quick Reference
 
 ### Spring Boot annotations
 
@@ -1703,6 +1710,326 @@ HTTP Request (from browser or curl)
 │   Database    │  PostgreSQL (prod) / H2 (dev/test)
 └───────────────┘
 ```
+
+---
+
+## 10. Monitoring: Actuator, Prometheus, and Grafana
+
+### 10.1 What is Monitoring and Why Does It Matter?
+
+When an app runs in production, you can't just sit and watch the logs. You need to
+know: Is the server healthy? Is it running out of memory? Are requests getting slow?
+Are errors spiking?
+
+**Monitoring** means continuously collecting numbers (called **metrics**) from your
+running app and displaying them on graphs so you can spot problems before users do.
+
+PawStore uses a three-layer monitoring stack that is the industry standard:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Spring Boot app (port 8080)                                │
+│  Spring Boot Actuator exposes metrics at /actuator/prometheus│
+└──────────────────────────┬──────────────────────────────────┘
+                           │  Prometheus scrapes this URL every 15 seconds
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Prometheus (port 9090)                                     │
+│  Stores a time-series database of all the metrics           │
+└──────────────────────────┬──────────────────────────────────┘
+                           │  Grafana queries Prometheus
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Grafana (port 3000)                                        │
+│  Displays the metrics as live charts and dashboards         │
+└─────────────────────────────────────────────────────────────┘
+```
+
+Think of it like this:
+- **Actuator** is a health monitor strapped to the app — it measures everything
+- **Prometheus** is a data recorder that snapshots those measurements every 15 seconds
+- **Grafana** is the screen on the wall that draws the charts
+
+---
+
+### 10.2 Spring Boot Actuator — Built-in Health and Metrics
+
+Spring Boot Actuator is a dependency that automatically adds a set of built-in
+HTTP endpoints to your app. You don't write any code — just add the dependency
+and turn on the endpoints you want.
+
+**The dependency is already in `pom.xml`:**
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-actuator</artifactId>
+</dependency>
+
+<!-- Micrometer: formats metrics in Prometheus's text format -->
+<dependency>
+    <groupId>io.micrometer</groupId>
+    <artifactId>micrometer-registry-prometheus</artifactId>
+</dependency>
+```
+
+**Configured in `application.properties`:**
+
+```properties
+# Which actuator endpoints to expose over HTTP
+management.endpoints.web.exposure.include=prometheus,health,info
+
+# Show full detail on the /actuator/health endpoint
+management.endpoint.health.show-details=always
+
+# Tag every metric with application="pawstore" so Grafana can filter by app name
+management.metrics.tags.application=pawstore
+```
+
+**The endpoints this creates:**
+
+| URL | What it returns |
+|-----|----------------|
+| `/actuator/health` | Is the app up? Is the database reachable? |
+| `/actuator/info` | App version and build info (if configured) |
+| `/actuator/prometheus` | All metrics in Prometheus text format |
+
+Try it while the app is running:
+
+```bash
+# Check if the app and database are healthy
+curl http://localhost:8080/actuator/health
+```
+
+```json
+{
+  "status": "UP",
+  "components": {
+    "db": { "status": "UP", "details": { "database": "PostgreSQL" } },
+    "diskSpace": { "status": "UP" },
+    "ping": { "status": "UP" }
+  }
+}
+```
+
+```bash
+# See the raw metrics Prometheus will collect
+curl http://localhost:8080/actuator/prometheus
+```
+
+This returns hundreds of lines of text like:
+
+```
+# HELP http_server_requests_seconds Duration of HTTP server request handling
+http_server_requests_seconds_count{application="pawstore",method="GET",status="200",uri="/api/pets"} 42.0
+http_server_requests_seconds_sum{...} 1.234
+
+# HELP jvm_memory_used_bytes The amount of used memory
+jvm_memory_used_bytes{application="pawstore",area="heap",...} 8.5E7
+
+# HELP hikaricp_connections_active Active connections in the HikariCP pool
+hikaricp_connections_active{application="pawstore",...} 1.0
+```
+
+Each line is: `metric_name{labels} value`. Prometheus reads and stores these numbers
+over time so you can see trends — for example, whether memory usage is slowly climbing.
+
+**Which metrics does Actuator expose automatically?**
+
+Micrometer (the library underneath Actuator) instruments the most important things
+without any configuration:
+
+| Category | What's measured |
+|---|---|
+| **HTTP requests** | Count, total duration, errors — per endpoint and status code |
+| **JVM memory** | Heap used, heap max, non-heap — per memory pool |
+| **JVM threads** | Live threads, daemon threads, peak |
+| **Garbage collection** | Pause duration and frequency — per GC type |
+| **Database pool** | Active, idle, and pending connections (HikariCP) |
+| **CPU** | Process CPU usage percentage |
+| **Disk** | Free disk space |
+
+---
+
+### 10.3 Prometheus — Collecting the Metrics
+
+Prometheus is a time-series database. Its job is to **scrape** (fetch) the metrics
+endpoint of your app at a regular interval and store every value with a timestamp.
+
+**Its config lives in `docker/prometheus/prometheus.yml`:**
+
+```yaml
+global:
+  scrape_interval: 15s      # Fetch metrics from every target every 15 seconds
+  evaluation_interval: 15s  # Evaluate alert rules every 15 seconds
+
+scrape_configs:
+  - job_name: 'pawstore'
+    metrics_path: '/actuator/prometheus'   # The URL to scrape
+    static_configs:
+      - targets: ['app:8080']   # 'app' is the Docker Compose service name
+```
+
+`app:8080` works because Docker Compose puts all services on the same internal network,
+so containers can reach each other by service name. Prometheus calls
+`http://app:8080/actuator/prometheus` every 15 seconds and stores everything it gets.
+
+**Exploring Prometheus directly:**
+
+With Docker Compose running, open `http://localhost:9090` in your browser.
+You can type PromQL (Prometheus Query Language) expressions and get raw results.
+
+Some useful queries to try:
+
+```promql
+# Total number of HTTP requests received by the app
+http_server_requests_seconds_count{application="pawstore"}
+
+# Request rate per second over the last minute (smoothed)
+rate(http_server_requests_seconds_count{application="pawstore"}[1m])
+
+# JVM heap currently in use (in bytes)
+jvm_memory_used_bytes{application="pawstore", area="heap"}
+
+# How many active database connections right now
+hikaricp_connections_active{application="pawstore"}
+
+# CPU usage as a percentage
+process_cpu_usage{application="pawstore"} * 100
+```
+
+> **What is `rate(...[1m])`?** Prometheus counters only go up (e.g. total request
+> count since startup). `rate()` converts a cumulative counter into a "per-second"
+> rate over the given time window. This is more useful for graphs than raw totals.
+
+---
+
+### 10.4 Grafana — Visualising the Metrics
+
+Grafana is a dashboarding tool. It queries Prometheus for data and draws charts.
+
+**Open it at `http://localhost:3000`** (login: `admin` / `admin`) when Docker
+Compose is running.
+
+**How Grafana is configured:**
+
+Grafana supports **provisioning** — loading its configuration from files instead of
+clicking through the UI. This means the datasource and dashboards are already set up
+the moment Docker Compose starts; you don't have to configure anything manually.
+
+```
+docker/grafana/
+├── provisioning/
+│   ├── datasources/
+│   │   └── prometheus.yml    ← Tells Grafana where Prometheus is
+│   └── dashboards/
+│       └── dashboards.yml    ← Tells Grafana where to find dashboard JSON files
+└── dashboards/
+    └── pawstore.json         ← The actual pre-built dashboard definition
+```
+
+**`provisioning/datasources/prometheus.yml`** — connects Grafana to Prometheus:
+
+```yaml
+apiVersion: 1
+datasources:
+  - name: Prometheus
+    type: prometheus
+    url: http://prometheus:9090   # 'prometheus' is the Docker Compose service name
+    isDefault: true
+```
+
+**`provisioning/dashboards/dashboards.yml`** — tells Grafana to load JSON files:
+
+```yaml
+apiVersion: 1
+providers:
+  - name: PawStore
+    type: file
+    options:
+      path: /var/lib/grafana/dashboards   # Folder inside the container
+```
+
+The `docker-compose.yml` mounts `./docker/grafana/dashboards` into that container
+path, so `pawstore.json` is loaded automatically on startup.
+
+---
+
+### 10.5 The Pre-built PawStore Dashboard
+
+The dashboard at `docker/grafana/dashboards/pawstore.json` contains eight panels,
+each visualising a different aspect of the running app:
+
+| Panel | What it shows | Why it matters |
+|-------|--------------|----------------|
+| **HTTP Request Rate** | Requests per second, split by endpoint and method | Spot traffic spikes and which endpoints are busiest |
+| **HTTP Error Rate** | 5xx responses per second, split by endpoint | Detect server errors the moment they happen |
+| **HTTP Response Time (P95)** | 95th-percentile latency in ms, per endpoint | 95% of users experience ≤ this response time; high values mean slowness |
+| **CPU Usage** | Process CPU % | Sustained high CPU can mean a bug or under-provisioning |
+| **JVM Heap Memory** | Used vs max heap in bytes | Gradual climb without drops = memory leak |
+| **Database Connections** | Active / idle / pending HikariCP connections | Pending connections = the DB pool is exhausted (too much load) |
+| **JVM Threads** | Live and daemon thread count | Unexpected growth = thread leak |
+| **GC Pause Duration (P99)** | Garbage collection pause time in ms | Long GC pauses cause request latency spikes |
+
+**What is P95 / P99 (percentile)?**
+
+Averages can be misleading. If 99 requests take 10ms and 1 request takes 10 seconds,
+the average is ~110ms — but clearly something is very wrong for that 1 user.
+
+Percentiles tell a better story:
+- **P95 = 200ms** means 95% of requests finished in under 200ms
+- **P99 = 2000ms** means 99% of requests finished in under 2000ms
+- The remaining 1% took longer — those are your slow outliers
+
+**HikariCP** is the database connection pool Spring Boot uses by default. Instead of
+opening a new database connection for every request (slow and expensive), it keeps a
+pool of open connections ready to reuse. The metrics tell you:
+- `active` — connections currently in use by a request
+- `idle` — connections in the pool, waiting to be used
+- `pending` — requests waiting because all connections are busy (bad — means the pool is too small or the DB is too slow)
+
+---
+
+### 10.6 How the Pieces Wire Together
+
+Here is the full data flow from the app to your screen:
+
+```
+Every HTTP request to Spring Boot
+        │
+        ▼
+Micrometer (inside the app)
+  Records: method, URI, status code, duration
+  Increments counters and histograms in memory
+        │
+        ▼  (every 15 seconds)
+Prometheus scrapes GET /actuator/prometheus
+  Reads the current counter/gauge/histogram values
+  Stores them with a timestamp in its time-series DB
+        │
+        ▼  (when you open a dashboard)
+Grafana sends a PromQL query to Prometheus
+  e.g. rate(http_server_requests_seconds_count[1m])
+  Prometheus computes the result over stored data
+  Grafana draws it as a line chart
+        │
+        ▼
+You see a live graph in your browser
+```
+
+**How `management.metrics.tags.application=pawstore` helps:**
+
+Every metric Micrometer records gets an extra label: `application="pawstore"`.
+This lets you filter in Grafana — useful if you later add more services and they
+all report to the same Prometheus instance. Your PromQL queries can then use
+`{application="pawstore"}` to look at only this app's metrics.
+
+**Security note:** In this project, `/actuator/prometheus` and `/actuator/health`
+are publicly accessible (no login required). This is fine for development and for
+internal networks where Prometheus scrapes directly, but in a public-facing production
+deployment you would want to restrict these endpoints to internal traffic only,
+for example by putting them behind a firewall or requiring a Prometheus-specific
+auth token.
 
 ---
 
