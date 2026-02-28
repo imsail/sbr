@@ -1,0 +1,25 @@
+# Maven
+target/
+*.class
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# Spring Boot
+*.jar
+*.war
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local

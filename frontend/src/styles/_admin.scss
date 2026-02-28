@@ -1,0 +1,92 @@
+@use 'variables' as *;
+@use 'mixins' as *;
+
+.admin {
+  padding: 2.5rem 0 4rem;
+
+  &__header {
+    @include flex(row, center, space-between);
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+
+    h1 { font-size: 2rem; font-weight: 800; }
+    p  { color: $text-muted; margin-top: 0.2rem; }
+  }
+
+  &__back {
+    @include btn(transparent, $text-muted);
+    border: 1px solid $border;
+    &:hover { color: $primary; border-color: $primary; filter: none; }
+  }
+}
+
+/* Form */
+.pet-form {
+  @include card;
+  padding: 2rem;
+  max-width: 680px;
+  margin: 0 auto;
+
+  &__title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    margin-bottom: 1.75rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid $border;
+  }
+
+  &__grid {
+    @include grid(2, 1.25rem);
+    @include responsive($md) { grid-template-columns: 1fr; }
+  }
+
+  &__full { grid-column: 1 / -1; }
+
+  &__group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: $text;
+  }
+
+  input, select, textarea {
+    padding: 0.6rem 0.85rem;
+    border: 1.5px solid $border;
+    border-radius: $radius-sm;
+    font-size: 0.9rem;
+    color: $text;
+    background: $bg;
+    transition: border-color $transition;
+
+    &:focus {
+      outline: none;
+      border-color: $primary;
+    }
+
+    &::placeholder { color: $text-light; }
+  }
+
+  textarea { resize: vertical; min-height: 100px; }
+
+  &__actions {
+    @include flex(row, center, flex-end);
+    gap: 0.75rem;
+    margin-top: 1.75rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid $border;
+  }
+
+  &__cancel {
+    @include btn(transparent, $text-muted);
+    border: 1px solid $border;
+    &:hover { color: $danger; border-color: $danger; filter: none; }
+  }
+
+  &__submit { @include btn($primary); }
+}

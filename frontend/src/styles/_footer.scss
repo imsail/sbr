@@ -1,0 +1,53 @@
+@use 'variables' as *;
+@use 'mixins' as *;
+
+.footer {
+  background: $text;
+  color: rgba(255,255,255,0.75);
+  padding: 3rem 0 1.5rem;
+  margin-top: auto;
+
+  &__grid {
+    @include grid(3, 2rem);
+    margin-bottom: 2rem;
+
+    @include responsive($md) { grid-template-columns: 1fr; }
+  }
+
+  &__brand {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: $primary;
+    margin-bottom: 0.5rem;
+    span { color: #fff; }
+  }
+
+  &__desc { font-size: 0.9rem; line-height: 1.7; }
+
+  h4 {
+    color: #fff;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 1rem;
+  }
+
+  ul { list-style: none; }
+
+  li { margin-bottom: 0.5rem; }
+
+  a {
+    font-size: 0.9rem;
+    color: rgba(255,255,255,0.65);
+    transition: color $transition;
+    &:hover { color: $primary; }
+  }
+
+  &__bottom {
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-top: 1.25rem;
+    text-align: center;
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.4);
+  }
+}

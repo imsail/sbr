@@ -1,0 +1,39 @@
+// Colors
+$primary:        #f97316;   // orange
+$primary-dark:   #ea580c;
+$primary-light:  #fed7aa;
+$secondary:      #0ea5e9;   // sky blue
+$success:        #22c55e;
+$warning:        #f59e0b;
+$danger:         #ef4444;
+$adopted:        #8b5cf6;
+
+$bg:             #fafaf9;
+$surface:        #ffffff;
+$border:         #e5e7eb;
+$text:           #1c1917;
+$text-muted:     #78716c;
+$text-light:     #a8a29e;
+
+// Typography
+$font-sans: 'Segoe UI', system-ui, -apple-system, sans-serif;
+
+// Spacing
+$radius-sm:  0.375rem;
+$radius:     0.75rem;
+$radius-lg:  1.25rem;
+$radius-xl:  2rem;
+
+// Shadows
+$shadow-sm:  0 1px 3px rgba(0,0,0,.08);
+$shadow:     0 4px 16px rgba(0,0,0,.10);
+$shadow-lg:  0 12px 40px rgba(0,0,0,.14);
+
+// Transitions
+$transition: 0.2s ease;
+
+// Breakpoints
+$sm: 576px;
+$md: 768px;
+$lg: 992px;
+$xl: 1200px;

@@ -1,0 +1,195 @@
+@use 'variables' as *;
+@use 'mixins' as *;
+
+/* Hero */
+.hero {
+  background: linear-gradient(135deg, #fff7ed 0%, #fef3c7 50%, #ecfdf5 100%);
+  padding: 5rem 0 4rem;
+
+  &__inner {
+    @include flex(row, center, space-between);
+    gap: 3rem;
+
+    @include responsive($md) { flex-direction: column; text-align: center; }
+  }
+
+  &__content { flex: 1; }
+
+  &__eyebrow {
+    display: inline-block;
+    background: $primary-light;
+    color: $primary-dark;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.3rem 0.9rem;
+    border-radius: 999px;
+    margin-bottom: 1.25rem;
+  }
+
+  &__title {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 900;
+    line-height: 1.1;
+    margin-bottom: 1.2rem;
+    color: $text;
+
+    span { color: $primary; }
+  }
+
+  &__sub {
+    font-size: 1.1rem;
+    color: $text-muted;
+    max-width: 480px;
+    margin-bottom: 2rem;
+    line-height: 1.7;
+  }
+
+  &__cta {
+    @include flex(row, center, flex-start);
+    gap: 1rem;
+    flex-wrap: wrap;
+    @include responsive($md) { justify-content: center; }
+  }
+
+  &__btn-primary { @include btn($primary); font-size: 1rem; padding: 0.75rem 2rem; }
+  &__btn-outline {
+    @include btn(transparent, $text);
+    border: 2px solid $border;
+    &:hover { border-color: $primary; color: $primary; filter: none; }
+  }
+
+  &__image {
+    flex: 1;
+    max-width: 480px;
+    border-radius: $radius-xl;
+    overflow: hidden;
+    box-shadow: $shadow-lg;
+
+    img { width: 100%; height: 380px; object-fit: cover; }
+
+    @include responsive($md) { max-width: 100%; }
+  }
+}
+
+/* Stats bar */
+.stats-bar {
+  background: $surface;
+  border-top: 1px solid $border;
+  border-bottom: 1px solid $border;
+  padding: 2rem 0;
+
+  &__grid {
+    @include grid(4, 0);
+    @include responsive($md) { grid-template-columns: repeat(2,1fr); }
+  }
+
+  &__item {
+    text-align: center;
+    padding: 1rem;
+    border-right: 1px solid $border;
+    &:last-child { border-right: none; }
+  }
+
+  &__value {
+    font-size: 2rem;
+    font-weight: 900;
+    color: $primary;
+  }
+
+  &__label {
+    font-size: 0.85rem;
+    color: $text-muted;
+    margin-top: 0.2rem;
+  }
+}
+
+/* Categories section */
+.categories {
+  padding: 4rem 0;
+
+  &__title {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    text-align: center;
+  }
+
+  &__sub {
+    text-align: center;
+    color: $text-muted;
+    margin-bottom: 2.5rem;
+  }
+
+  &__grid {
+    @include grid(6, 1rem);
+    @include responsive($lg) { grid-template-columns: repeat(3,1fr); }
+    @include responsive($sm) { grid-template-columns: repeat(2,1fr); }
+  }
+
+  &__card {
+    @include card;
+    @include flex(column, center, center);
+    padding: 1.5rem 1rem;
+    cursor: pointer;
+    transition: transform $transition, box-shadow $transition, border-color $transition;
+    text-align: center;
+    gap: 0.5rem;
+
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: $shadow;
+      border-color: $primary-light;
+    }
+  }
+
+  &__icon { font-size: 2.2rem; }
+
+  &__name {
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+
+  &__count {
+    font-size: 0.78rem;
+    color: $text-muted;
+  }
+}
+
+/* Featured pets section */
+.featured {
+  padding: 4rem 0;
+  background: linear-gradient(180deg, $bg 0%, #fff7ed 100%);
+
+  &__header {
+    @include flex(row, center, space-between);
+    margin-bottom: 2rem;
+
+    @include responsive($sm) { flex-direction: column; gap: 1rem; align-items: flex-start; }
+  }
+
+  &__title { font-size: 1.8rem; font-weight: 800; }
+  &__sub { color: $text-muted; font-size: 0.95rem; margin-top: 0.2rem; }
+
+  &__link { @include btn($primary); font-size: 0.9rem; }
+
+  &__grid {
+    @include grid(4, 1.5rem);
+    @include responsive($lg) { grid-template-columns: repeat(3,1fr); }
+    @include responsive($md) { grid-template-columns: repeat(2,1fr); }
+    @include responsive($sm) { grid-template-columns: 1fr; }
+  }
+}
+
+/* Section title util */
+.section-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  margin-bottom: 0.4rem;
+
+  &__sub {
+    color: $text-muted;
+    margin-bottom: 2rem;
+  }
+}

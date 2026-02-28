@@ -1,0 +1,59 @@
+@use 'variables' as *;
+
+@mixin flex($dir: row, $align: center, $justify: flex-start) {
+  display: flex;
+  flex-direction: $dir;
+  align-items: $align;
+  justify-content: $justify;
+}
+
+@mixin grid($cols, $gap: 1.5rem) {
+  display: grid;
+  grid-template-columns: repeat($cols, 1fr);
+  gap: $gap;
+}
+
+@mixin responsive($bp) {
+  @media (max-width: $bp) { @content; }
+}
+
+@mixin card {
+  background: $surface;
+  border-radius: $radius;
+  box-shadow: $shadow-sm;
+  border: 1px solid $border;
+}
+
+@mixin btn($bg: $primary, $color: #fff) {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1.25rem;
+  background: $bg;
+  color: $color;
+  border: none;
+  border-radius: $radius-sm;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter $transition, transform $transition;
+  text-decoration: none;
+
+  &:hover {
+    filter: brightness(0.92);
+    transform: translateY(-1px);
+  }
+  &:active { transform: translateY(0); }
+}
+
+@mixin status-badge($bg, $color) {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background: $bg;
+  color: $color;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
