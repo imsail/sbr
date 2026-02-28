@@ -2,6 +2,8 @@
 
 A full-stack pet-store application built with **Spring Boot 3** on the backend and **React 18 + SASS** on the frontend, backed by **PostgreSQL**, packaged as a single executable JAR, and fully containerised with Docker.
 
+> **New to the stack?** Read the [**Junior Developer Tutorial**](TUTORIAL.md) for a guided walkthrough of every layer — models, services, controllers, React hooks, auth, and more.
+
 ---
 
 ## Table of Contents
