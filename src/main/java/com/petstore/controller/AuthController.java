@@ -4,7 +4,9 @@ import com.petstore.dto.LoginRequest;
 import com.petstore.dto.RegisterRequest;
 import com.petstore.dto.UserResponse;
 import com.petstore.model.User;
+import com.petstore.security.JwtService;
 import com.petstore.service.UserService;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -17,8 +19,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -27,6 +32,7 @@ public class AuthController {
 
     private final AuthenticationManager authenticationManager;
     private final UserService userService;
+    private final JwtService jwtService;
 
     @PostMapping("/register")
     public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest req) {
@@ -59,6 +65,37 @@ public class AuthController {
         HttpSession session = request.getSession(false);
         if (session != null) session.invalidate();
         SecurityContextHolder.clearContext();
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/token")
+    public ResponseEntity<Map<String, String>> issueToken(
+            @Valid @RequestBody LoginRequest req,
+            HttpServletResponse response) {
+
+        Authentication auth = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(req.getUsername(), req.getPassword()));
+
+        UserDetails user = (UserDetails) auth.getPrincipal();
+        String token = jwtService.generate(user);
+
+        Cookie cookie = new Cookie("jwt_token", token);
+        cookie.setHttpOnly(true);
+        cookie.setPath("/");
+        cookie.setMaxAge((int) (jwtService.getExpirationMs() / 1000));
+        cookie.setAttribute("SameSite", "Lax");
+        response.addCookie(cookie);
+
+        return ResponseEntity.ok(Map.of("token", token, "type", "Bearer"));
+    }
+
+    @DeleteMapping("/token")
+    public ResponseEntity<Void> revokeToken(HttpServletResponse response) {
+        Cookie cookie = new Cookie("jwt_token", "");
+        cookie.setHttpOnly(true);
+        cookie.setPath("/");
+        cookie.setMaxAge(0);
+        response.addCookie(cookie);
         return ResponseEntity.noContent().build();
     }
 

@@ -21,6 +21,8 @@ export const loginUser    = (data) => client.post('/auth/login',    data).then(r
 export const logoutUser   = ()     => client.post('/auth/logout')
 export const registerUser = (data) => client.post('/auth/register', data).then(r => r.data)
 export const getMe        = ()     => client.get('/auth/me').then(r => r.data)
+export const getApiToken  = (data) => client.post('/auth/token', data).then(r => r.data)
+export const deleteApiToken = ()   => client.delete('/auth/token')
 
 // ---- Users (admin) ----
 export const getUsers        = ()              => client.get('/users').then(r => r.data)
