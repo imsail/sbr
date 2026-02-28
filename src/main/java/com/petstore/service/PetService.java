@@ -7,6 +7,8 @@ import com.petstore.model.PetStatus;
 import com.petstore.repository.CategoryRepository;
 import com.petstore.repository.PetRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,19 +20,26 @@ public class PetService {
     private final PetRepository petRepository;
     private final CategoryRepository categoryRepository;
 
+    /** Unpaginated — used by the homepage featured section. */
     public List<Pet> findAll() {
         return petRepository.findAll();
     }
 
-    public List<Pet> findFiltered(PetStatus status, Long categoryId) {
+    /** Paginated listing with optional status / category filters. */
+    public Page<Pet> findFiltered(PetStatus status, Long categoryId, Pageable pageable) {
         if (status != null && categoryId != null) {
-            return petRepository.findByStatusAndCategoryId(status, categoryId);
+            return petRepository.findByStatusAndCategoryId(status, categoryId, pageable);
         } else if (status != null) {
-            return petRepository.findByStatus(status);
+            return petRepository.findByStatus(status, pageable);
         } else if (categoryId != null) {
-            return petRepository.findByCategoryId(categoryId);
+            return petRepository.findByCategoryId(categoryId, pageable);
         }
-        return petRepository.findAll();
+        return petRepository.findAll(pageable);
+    }
+
+    /** Paginated full-text search by name. */
+    public Page<Pet> search(String name, Pageable pageable) {
+        return petRepository.findByNameContainingIgnoreCase(name, pageable);
     }
 
     public Pet findById(Long id) {
@@ -38,19 +47,12 @@ public class PetService {
                 .orElseThrow(() -> new RuntimeException("Pet not found: " + id));
     }
 
-    public List<Pet> search(String name) {
-        return petRepository.findByNameContainingIgnoreCase(name);
-    }
-
     public Pet create(PetRequest request) {
-        Pet pet = mapToPet(new Pet(), request);
-        return petRepository.save(pet);
+        return petRepository.save(mapToPet(new Pet(), request));
     }
 
     public Pet update(Long id, PetRequest request) {
-        Pet pet = findById(id);
-        mapToPet(pet, request);
-        return petRepository.save(pet);
+        return petRepository.save(mapToPet(findById(id), request));
     }
 
     public void delete(Long id) {
