@@ -25,15 +25,48 @@ services:
     ports:
       - "8080:8080"
     environment:
-      # Override application.properties defaults with Docker-internal hostname
       DB_URL:      jdbc:postgresql://db:5432/petstore
       DB_USER:     petstore
       DB_PASSWORD: petstore
-      # Keep schema in sync without wiping data on restart
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
     depends_on:
       db:
-        condition: service_healthy    # wait for Postgres to accept connections
+        condition: service_healthy
+
+  # ── Prometheus ────────────────────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v3.2.1      # multi-arch
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=7d
+    depends_on:
+      - app
+
+  # ── Grafana ───────────────────────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:11.5.2      # multi-arch
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER:     admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP:     "false"
+    volumes:
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./docker/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
 
 volumes:
-  postgres_data:                       # named volume → data survives container restarts
+  postgres_data:
+  prometheus_data:
+  grafana_data:

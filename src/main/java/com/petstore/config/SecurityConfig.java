@@ -59,6 +59,8 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .headers(h -> h.frameOptions(fo -> fo.sameOrigin())) // H2 console iframes
             .authorizeHttpRequests(auth -> auth
+                // Actuator — Prometheus scrapes /actuator/prometheus without credentials
+                .requestMatchers("/actuator/prometheus", "/actuator/health", "/actuator/info").permitAll()
                 // H2 console
                 .requestMatchers("/h2-console/**").permitAll()
                 // Auth endpoints
