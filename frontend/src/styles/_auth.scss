@@ -1,0 +1,100 @@
+@use 'variables' as *;
+@use 'mixins' as *;
+
+.auth-page {
+  @include flex(row, center, center);
+  min-height: calc(100vh - 64px - 200px);
+  padding: 3rem 1rem;
+}
+
+.auth-card {
+  @include card;
+  width: 100%;
+  max-width: 420px;
+  padding: 2.5rem 2rem;
+
+  &__header { text-align: center; margin-bottom: 1.75rem; }
+
+  &__icon { font-size: 2.5rem; display: block; margin-bottom: 0.75rem; }
+
+  &__title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    margin-bottom: 0.3rem;
+  }
+
+  &__sub { color: $text-muted; font-size: 0.9rem; }
+
+  &__footer {
+    text-align: center;
+    margin-top: 1.5rem;
+    font-size: 0.88rem;
+    color: $text-muted;
+
+    a { color: $primary; font-weight: 600; &:hover { text-decoration: underline; } }
+  }
+
+  &__hint {
+    margin-top: 1.25rem;
+    padding: 0.75rem 1rem;
+    background: $bg;
+    border-radius: $radius-sm;
+    border: 1px dashed $border;
+    text-align: center;
+    font-size: 0.78rem;
+    color: $text-muted;
+    line-height: 1.7;
+  }
+}
+
+.auth-error {
+  background: rgba($danger, 0.08);
+  color: $danger;
+  border: 1px solid rgba($danger, 0.25);
+  border-radius: $radius-sm;
+  padding: 0.65rem 1rem;
+  font-size: 0.85rem;
+  margin-bottom: 1.25rem;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  &__group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+
+    label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: $text;
+    }
+
+    input {
+      padding: 0.65rem 0.9rem;
+      border: 1.5px solid $border;
+      border-radius: $radius-sm;
+      font-size: 0.9rem;
+      color: $text;
+      background: $bg;
+      transition: border-color $transition;
+
+      &:focus { outline: none; border-color: $primary; }
+      &::placeholder { color: $text-light; }
+    }
+  }
+
+  &__submit {
+    @include btn($primary);
+    justify-content: center;
+    width: 100%;
+    padding: 0.75rem;
+    font-size: 0.95rem;
+    margin-top: 0.5rem;
+
+    &:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+  }
+}

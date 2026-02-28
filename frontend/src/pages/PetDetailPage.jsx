@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getPet, deletePet, updatePet } from '../services/api'
+import { useAuth } from '../context/AuthContext'
 
 const PLACEHOLDER = 'https://images.unsplash.com/photo-1450778869180-41d0601e046e?w=600'
 
 export default function PetDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { isAdmin } = useAuth()
   const [pet, setPet] = useState(null)
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState(null)
@@ -108,20 +110,24 @@ export default function PetDetailPage() {
             )}
 
             <div className="pet-detail__actions">
-              {pet.status === 'AVAILABLE' && (
+              {isAdmin() && pet.status === 'AVAILABLE' && (
                 <button className="pet-detail__adopt-btn" onClick={handleAdopt}>
                   🏠 Adopt Me!
                 </button>
               )}
-              <button
-                className="pet-detail__edit-btn"
-                onClick={() => navigate(`/admin/${id}`)}
-              >
-                ✏️ Edit
-              </button>
-              <button className="pet-detail__delete-btn" onClick={handleDelete}>
-                🗑 Delete
-              </button>
+              {isAdmin() && (
+                <>
+                  <button
+                    className="pet-detail__edit-btn"
+                    onClick={() => navigate(`/admin/${id}`)}
+                  >
+                    ✏️ Edit
+                  </button>
+                  <button className="pet-detail__delete-btn" onClick={handleDelete}>
+                    🗑 Delete
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

@@ -64,7 +64,41 @@
     padding: 0.45rem 1rem;
   }
 
+  &__link-btn {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: $text-muted;
+    padding: 0.45rem 0.75rem;
+    border-radius: $radius-sm;
+    transition: color $transition;
+    &:hover { color: $primary; }
+  }
+
+  &__user {
+    @include flex(row, center, flex-end);
+    gap: 0.6rem;
+  }
+
+  &__username {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: $text;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__logout {
+    @include btn(transparent, $text-muted);
+    font-size: 0.82rem;
+    padding: 0.4rem 0.75rem;
+    border: 1px solid $border;
+    &:hover { color: $danger; border-color: $danger; filter: none; }
+  }
+
   @include responsive($md) {
     &__links { display: none; }
+    &__username { display: none; }
   }
 }

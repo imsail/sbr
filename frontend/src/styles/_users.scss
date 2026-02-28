@@ -1,0 +1,156 @@
+@use 'variables' as *;
+@use 'mixins' as *;
+
+.users-page {
+  padding: 2.5rem 0 4rem;
+
+  &__header {
+    @include flex(row, center, space-between);
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+
+    h1 { font-size: 2rem; font-weight: 800; }
+    p  { color: $text-muted; margin-top: 0.2rem; }
+  }
+
+  &__filters {
+    @include flex(row, center, flex-end);
+    gap: 0.4rem;
+  }
+
+  &__filter-btn {
+    padding: 0.4rem 1rem;
+    border: 1.5px solid $border;
+    border-radius: 999px;
+    background: $surface;
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    color: $text-muted;
+    transition: all $transition;
+
+    &:hover { border-color: $primary; color: $primary; }
+    &.active { background: $primary; border-color: $primary; color: #fff; font-weight: 700; }
+  }
+
+  &__empty {
+    text-align: center;
+    padding: 3rem;
+    color: $text-muted;
+    font-size: 1rem;
+  }
+}
+
+.users-table {
+  @include card;
+  overflow: hidden;
+
+  &__head {
+    display: grid;
+    grid-template-columns: 2fr 2fr 1.2fr 1fr 1.5fr;
+    padding: 0.75rem 1.25rem;
+    background: $bg;
+    border-bottom: 1px solid $border;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: $text-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+
+    @include responsive($md) { display: none; }
+  }
+
+  &__row {
+    display: grid;
+    grid-template-columns: 2fr 2fr 1.2fr 1fr 1.5fr;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid $border;
+    transition: background $transition;
+
+    &:last-child { border-bottom: none; }
+    &:hover { background: $bg; }
+
+    @include responsive($md) {
+      grid-template-columns: 1fr;
+      gap: 0.5rem;
+    }
+  }
+
+  &__user { @include flex(row, center, flex-start); gap: 0.75rem; }
+
+  &__avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    @include flex(row, center, center);
+    font-size: 1rem;
+    font-weight: 800;
+    color: #fff;
+    flex-shrink: 0;
+
+    &[data-role="ADMIN"]    { background: $primary; }
+    &[data-role="CUSTOMER"] { background: $secondary; }
+  }
+
+  &__name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    @include flex(row, center, flex-start);
+    gap: 0.4rem;
+  }
+
+  &__you {
+    font-size: 0.7rem;
+    background: $primary-light;
+    color: $primary-dark;
+    padding: 0.1rem 0.45rem;
+    border-radius: 999px;
+    font-weight: 700;
+  }
+
+  &__id { font-size: 0.75rem; color: $text-muted; }
+
+  &__email { font-size: 0.85rem; color: $text-muted; }
+
+  &__role {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+
+    &--ADMIN    { background: rgba($primary, 0.1); color: $primary-dark; }
+    &--CUSTOMER { background: rgba($secondary, 0.1); color: darken($secondary, 15%); }
+  }
+
+  &__date { font-size: 0.82rem; color: $text-muted; }
+
+  &__actions { @include flex(row, center, flex-start); gap: 0.5rem; }
+
+  &__btn {
+    padding: 0.35rem 0.8rem;
+    border-radius: $radius-sm;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1.5px solid $border;
+    background: $surface;
+    transition: all $transition;
+
+    &--role {
+      color: $secondary;
+      border-color: rgba($secondary, 0.4);
+      &:hover { background: rgba($secondary, 0.08); border-color: $secondary; }
+    }
+
+    &--delete {
+      color: $danger;
+      border-color: rgba($danger, 0.3);
+      &:hover { background: rgba($danger, 0.08); border-color: $danger; }
+    }
+  }
+}
