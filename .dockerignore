@@ -1,0 +1,20 @@
+# Build outputs (rebuilt inside Docker)
+target/
+frontend/dist/
+frontend/node_modules/
+
+# Git & editor
+.git/
+.gitignore
+.claude/
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets / env overrides
+.env
+.env.*

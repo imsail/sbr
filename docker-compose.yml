@@ -1,0 +1,39 @@
+services:
+
+  # ── PostgreSQL 16 ────────────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine          # multi-arch: linux/amd64 + linux/arm64
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       petstore
+      POSTGRES_USER:     petstore
+      POSTGRES_PASSWORD: petstore
+    ports:
+      - "5432:5432"                    # expose for local tools (DBeaver, psql …)
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U petstore -d petstore"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ── PawStore application ──────────────────────────────────────────────────────
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      # Override application.properties defaults with Docker-internal hostname
+      DB_URL:      jdbc:postgresql://db:5432/petstore
+      DB_USER:     petstore
+      DB_PASSWORD: petstore
+      # Keep schema in sync without wiping data on restart
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    depends_on:
+      db:
+        condition: service_healthy    # wait for Postgres to accept connections
+
+volumes:
+  postgres_data:                       # named volume → data survives container restarts
